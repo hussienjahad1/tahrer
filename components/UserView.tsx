@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAppContext } from '../contexts/AppContext';
 import { ImageConfig, TemplateCategory, TEMPLATE_CATEGORY_LABELS, UserEdits, EditableFieldKey, EDITABLE_FIELD_LABELS, TextOverlay } from '../types';
@@ -5,7 +6,6 @@ import Button from './common/Button';
 import Input from './common/Input';
 import ImageCanvas from './ImageCanvas';
 import Select from './common/Select';
-
 
 const UserView: React.FC = () => {
   const { imageTemplates, loadTemplates } = useAppContext();
@@ -54,6 +54,9 @@ const UserView: React.FC = () => {
       initialEdits[template.logoOverlay.editKey] = template.logoOverlay.imageUrl;
     }
     setUserEdits(initialEdits);
+    
+    // Scroll to top smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleUserEditChange = (key: EditableFieldKey, value: string) => {
@@ -199,182 +202,229 @@ const UserView: React.FC = () => {
   const logoEditKey = selectedTemplate?.logoOverlay?.editKey;
   const showLogoControls = selectedTemplate?.logoOverlay?.isEditableByUser && logoEditKey;
 
+  // View: Selection Mode
+  if (!selectedTemplate) {
+    return (
+        <div className="space-y-8">
+            <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700 shadow-xl">
+                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                     <div className="flex-1">
+                        <label className="block text-slate-400 mb-2 font-medium">تصفية القوالب حسب الفئة:</label>
+                        <Select
+                            value={selectedCategory}
+                            onChange={(e) => handleCategoryChange(e.target.value as TemplateCategory | '')}
+                            options={[{ value: '', label: '📂 عرض جميع القوالب' }, ...categoryOptions]}
+                            containerClassName="mb-0 max-w-md"
+                            className="bg-slate-900 border-slate-600 focus:border-sky-500 hover:border-slate-500 transition-colors"
+                        />
+                     </div>
+                     <div className="text-slate-400 text-sm pb-2">
+                        {filteredTemplates.length} قالب متاح
+                     </div>
+                 </div>
+            </div>
+
+            {filteredTemplates.length === 0 ? (
+                 <div className="flex flex-col items-center justify-center p-12 bg-slate-800/30 rounded-3xl border border-dashed border-slate-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 text-slate-600 mb-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                    <p className="text-lg text-slate-400 font-medium">لا توجد قوالب متاحة في الوقت الحالي.</p>
+                    <p className="text-sm text-slate-500 mt-2">جرب تغيير الفئة أو تواصل مع المسؤول.</p>
+                 </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredTemplates.map(template => (
+                    <div key={template.id} 
+                        className="group bg-slate-800 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-sky-500/10 border border-slate-700 hover:border-sky-500/50 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
+                        onClick={() => handleTemplateSelect(template)}>
+                    <div className="relative aspect-[4/5] overflow-hidden bg-slate-900">
+                        <img 
+                            src={template.imageUrl} 
+                            alt={template.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 group-hover:opacity-100" 
+                            loading="lazy"
+                            onError={(e) => {
+                                const target = e.currentTarget as HTMLImageElement;
+                                target.style.display = 'none';
+                                target.parentElement?.classList.add('flex', 'items-center', 'justify-center', 'bg-slate-800');
+                                const err = document.createElement('div');
+                                err.innerHTML = `<svg class="w-12 h-12 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`;
+                                target.parentElement?.appendChild(err);
+                            }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-80" />
+                        <div className="absolute bottom-0 left-0 right-0 p-4">
+                            <span className="inline-block px-2 py-1 text-xs font-semibold rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 mb-2">
+                                {TEMPLATE_CATEGORY_LABELS[template.category]}
+                            </span>
+                            <h3 className="text-lg font-bold text-white group-hover:text-sky-300 transition-colors">{template.name}</h3>
+                        </div>
+                    </div>
+                    </div>
+                ))}
+                </div>
+            )}
+        </div>
+    );
+  }
+
+  // View: Editing Mode
   return (
-    <div className="p-4 sm:p-6 bg-slate-800 rounded-xl shadow-2xl">
-      <h2 className="text-2xl sm:text-3xl font-bold text-center text-sky-400 mb-6 sm:mb-8">عرض وتعديل المستندات</h2>
-      
-      <div className="mb-6">
-        <Select
-            label="اختر فئة المستند:"
-            value={selectedCategory}
-            onChange={(e) => handleCategoryChange(e.target.value as TemplateCategory | '')}
-            options={[{ value: '', label: 'جميع الفئات' }, ...categoryOptions]}
-            containerClassName="max-w-md mx-auto"
-        />
+    <div className="animate-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-center justify-between mb-6">
+         <Button 
+            onClick={() => { setSelectedTemplate(null); setUserEdits({}); setImageLoadError(null);}} 
+            variant="secondary"
+            className="flex items-center gap-2 pr-2"
+         >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" />
+            </svg>
+            العودة للقوالب
+         </Button>
+         <h2 className="text-xl md:text-2xl font-bold text-slate-100 hidden sm:block">{selectedTemplate.name}</h2>
       </div>
 
-      {selectedCategory && filteredTemplates.length === 0 && (
-        <p className="text-center text-slate-400 my-8">لا توجد قوالب متاحة لهذه الفئة.</p>
-      )}
-
-      {!selectedCategory && imageTemplates.length === 0 && (
-         <p className="text-center text-slate-400 my-8">لا توجد أي قوالب. يرجى الطلب من المسؤول إعداد بعض القوالب.</p>
-      )}
-
-
-      {!selectedTemplate && filteredTemplates.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
-          {filteredTemplates.map(template => (
-            <div key={template.id} 
-                 className="p-4 bg-slate-700 rounded-lg shadow-lg cursor-pointer hover:bg-slate-600 transition-colors duration-150 flex flex-col"
-                 onClick={() => handleTemplateSelect(template)}>
-              <img 
-                src={template.imageUrl} 
-                alt={`معاينة لـ ${template.name}`}
-                className="w-full h-40 object-cover rounded-md mb-3 bg-slate-500 border border-transparent" 
-                onError={(e) => {
-                  const target = e.currentTarget as HTMLImageElement;
-                  target.alt = `فشل تحميل معاينة: ${template.name}`;
-                  target.style.border = '2px solid red';
-                  const parent = target.parentNode as HTMLElement | null;
-                  if (parent) {
-                    parent.classList.add('bg-slate-800', 'flex', 'items-center', 'justify-center');
-                  }
-                  target.style.display = 'none';
-                  const errorText = document.createElement('span');
-                  errorText.className = 'text-red-400 text-xs text-center p-2';
-                  errorText.textContent = 'فشل تحميل الصورة';
-                  if (target.parentNode && !target.parentNode.querySelector('.text-red-400')) {
-                     target.parentNode.appendChild(errorText);
-                  }
-                }}
-              />
-              <div className="mt-auto">
-                <h3 className="font-semibold text-lg text-cyan-300 truncate" title={template.name}>{template.name}</h3>
-                <p className="text-sm text-slate-300">{TEMPLATE_CATEGORY_LABELS[template.category]}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {selectedTemplate && (
-        <div className="mt-8">
-          <Button onClick={() => { setSelectedTemplate(null); setUserEdits({}); setImageLoadError(null);}} variant="secondary" className="mb-6">
-            &larr; العودة لاختيار القوالب
-          </Button>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 p-4 bg-slate-700 rounded-lg">
-              <h3 className="text-xl font-semibold text-cyan-300 mb-2">{selectedTemplate.name}</h3>
-              <p className="text-sm text-slate-400 -mt-1 mb-4">انقر على أي نص قابل للتعديل لتحديده، ثم اسحبه لتغيير موضعه.</p>
-              {imageLoadError && (
-                <div className="p-4 mb-4 text-center bg-red-900/60 border border-red-700 text-red-300 rounded-md">
-                  <p className="font-semibold">فشل تحميل صورة القالب!</p>
-                  <p className="text-sm">{imageLoadError}</p>
-                  <p className="text-sm mt-1">لا يزال بإمكانك تعديل الحقول النصية، ولكن الخلفية لن تكون مرئية. يرجى إبلاغ المسؤول بالمشكلة.</p>
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Editor Sidebar */}
+        <div className="lg:w-1/3 order-2 lg:order-1">
+            <div className="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden sticky top-24">
+                <div className="p-4 bg-slate-900/50 border-b border-slate-700 flex items-center justify-between">
+                     <h3 className="font-bold text-lg text-sky-400 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                        </svg>
+                        أدوات التعديل
+                     </h3>
+                     <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded">
+                        {currentEditableOverlays.length} حقول
+                     </span>
                 </div>
-              )}
-              <ImageCanvas 
-                imageUrl={selectedTemplate.imageUrl} 
-                overlays={editableOverlays}
-                logoOverlay={selectedTemplate.logoOverlay}
-                userEdits={userEdits}
-                canvasWidthProp={selectedTemplate.canvasWidth}
-                canvasHeightProp={selectedTemplate.canvasHeight}
-                backgroundColor="#DDDDDD"
-                onImageLoadError={() => {
-                  setImageLoadError(`تعذر تحميل صورة الخلفية للقالب "${selectedTemplate.name}". قد يكون الرابط غير صحيح أو هناك قيود على الوصول (CORS).`);
-                }}
-                onCanvasLeftClick={handleCanvasClick}
-                selectedOverlayId={selectedOverlayId}
-                isMovementEnabled={true}
-                onOverlayDragStart={handleOverlayDragStart}
-                onOverlayPositionUpdate={handleOverlayPositionUpdate}
-                onOverlayDragEnd={handleOverlayDragEnd}
-              />
-               <canvas ref={canvasExportRef} style={{ display: 'none' }}></canvas>
-            </div>
-            <div className="md:col-span-1 p-4 bg-slate-700 rounded-lg">
-              <h3 className="text-xl font-semibold text-cyan-300 mb-4">تعديل الحقول</h3>
-              {currentEditableOverlays.length === 0 && !showLogoControls && <p className="text-slate-400">لا توجد حقول قابلة للتعديل في هذا القالب.</p>}
-              {currentEditableOverlays.map(overlay => (
-                overlay.editKey && ( 
-                  <Input
-                    key={overlay.editKey}
-                    label={EDITABLE_FIELD_LABELS[overlay.editKey] || overlay.editKey}
-                    value={userEdits[overlay.editKey] || ''}
-                    onChange={(e) => handleUserEditChange(overlay.editKey!, e.target.value)}
-                    containerClassName="mb-3"
-                  />
-                )
-              ))}
-              {showLogoControls && logoEditKey && (
-                <div className="mt-4 pt-4 border-t border-slate-600">
-                  <h4 className="text-lg font-semibold text-cyan-400 mb-2">
-                    {EDITABLE_FIELD_LABELS[logoEditKey]}
-                  </h4>
+                
+                <div className="p-5 space-y-5 max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar">
+                    {currentEditableOverlays.length === 0 && !showLogoControls && (
+                        <div className="text-center py-8 text-slate-500">
+                            <p>لا توجد حقول قابلة للتعديل.</p>
+                        </div>
+                    )}
 
-                  <div>
-                      <label htmlFor="logo-upload" className="w-full text-center block cursor-pointer bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out text-sm mb-2">
-                          رفع شعار من الجهاز
-                      </label>
-                      <input 
-                          id="logo-upload"
-                          type="file" 
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => handleLogoFileUpload(e, logoEditKey)}
-                      />
-                  </div>
+                    {currentEditableOverlays.map(overlay => (
+                        overlay.editKey && ( 
+                        <div key={overlay.editKey} className={`transition-all duration-300 ${selectedOverlayId === overlay.id ? 'ring-2 ring-sky-500/50 rounded-lg p-2 bg-slate-700/30' : ''}`}>
+                             <Input
+                                label={EDITABLE_FIELD_LABELS[overlay.editKey] || overlay.editKey}
+                                value={userEdits[overlay.editKey] || ''}
+                                onChange={(e) => handleUserEditChange(overlay.editKey!, e.target.value)}
+                                placeholder={`أدخل ${EDITABLE_FIELD_LABELS[overlay.editKey] || ''}...`}
+                                onFocus={() => setSelectedOverlayId(overlay.id)}
+                            />
+                        </div>
+                        )
+                    ))}
 
-                  <div className="flex items-center my-2">
-                      <div className="flex-grow border-t border-slate-600"></div>
-                      <span className="flex-shrink mx-2 text-slate-400 text-sm">أو</span>
-                      <div className="flex-grow border-t border-slate-600"></div>
-                  </div>
-
-                  <Input
-                    key={`${logoEditKey}-url`}
-                    label="لصق رابط شعار"
-                    value={(userEdits[logoEditKey] || '').startsWith('data:') ? '' : userEdits[logoEditKey] || ''}
-                    onChange={(e) => handleUserEditChange(logoEditKey, e.target.value)}
-                    placeholder={(userEdits[logoEditKey] || '').startsWith('data:') ? 'تم رفع ملف. استخدم الزر أدناه للحذف.' : 'https://example.com/logo.png'}
-                    disabled={(userEdits[logoEditKey] || '').startsWith('data:')}
-                    containerClassName="mb-3"
-                  />
-
-                  {(userEdits[logoEditKey]) && (
-                      <Button
-                        onClick={() => {
-                            handleUserEditChange(logoEditKey, '');
-                            const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
-                            if (fileInput) fileInput.value = '';
-                        }}
-                        variant="danger"
-                        size="sm"
-                        className="w-full"
-                      >
-                        حذف الشعار المخصص
-                      </Button>
-                  )}
+                    {showLogoControls && logoEditKey && (
+                        <div className="pt-4 border-t border-slate-700/50 mt-4">
+                            <h4 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                                </svg>
+                                {EDITABLE_FIELD_LABELS[logoEditKey]}
+                            </h4>
+                            
+                            <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700">
+                                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-600 border-dashed rounded-lg cursor-pointer hover:bg-slate-800 transition-colors">
+                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <svg className="w-6 h-6 mb-2 text-slate-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                                        </svg>
+                                        <p className="text-xs text-slate-400">اضغط لرفع صورة الشعار</p>
+                                    </div>
+                                    <input type="file" className="hidden" accept="image/*" onChange={(e) => handleLogoFileUpload(e, logoEditKey)} />
+                                </label>
+                                
+                                {userEdits[logoEditKey] && (userEdits[logoEditKey].startsWith('data:') || userEdits[logoEditKey].length > 0) && (
+                                     <div className="mt-3 flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700">
+                                        <span className="text-xs text-green-400 flex items-center gap-1">
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
+                                            تم اختيار شعار
+                                        </span>
+                                        <button 
+                                            onClick={() => handleUserEditChange(logoEditKey, '')}
+                                            className="text-red-400 hover:text-red-300 text-xs font-medium"
+                                        >
+                                            إزالة
+                                        </button>
+                                     </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
-              )}
-              {(currentEditableOverlays.length > 0 || showLogoControls) && (
-                <Button 
-                  onClick={handleExportImage} 
-                  variant="success" 
-                  size="lg" 
-                  className="w-full mt-4"
-                  disabled={!!imageLoadError}
-                  title={imageLoadError ? "التصدير معطل بسبب فشل تحميل صورة القالب" : "تصدير الصورة المعدلة"}
-                >
-                  تصدير الصورة المعدلة
-                </Button>
-              )}
+
+                <div className="p-4 bg-slate-900/50 border-t border-slate-700">
+                    <Button 
+                        onClick={handleExportImage} 
+                        variant="success" 
+                        size="lg" 
+                        className="w-full shadow-lg shadow-green-900/20 flex items-center justify-center gap-2"
+                        disabled={!!imageLoadError}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        حفظ وتصدير الصورة
+                    </Button>
+                </div>
             </div>
-          </div>
         </div>
-      )}
+
+        {/* Canvas Area */}
+        <div className="lg:w-2/3 order-1 lg:order-2">
+            <div className="bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-700 relative">
+                 {/* Toolbar for Canvas (Optional future expansion) */}
+                 <div className="bg-slate-900/80 backdrop-blur text-xs text-slate-400 py-2 px-4 flex justify-between items-center border-b border-slate-700">
+                    <span>مساحة العمل</span>
+                    <span className="opacity-70">اسحب النصوص لتغيير مكانها</span>
+                 </div>
+
+                 <div className="p-4 md:p-8 bg-[#1e293b] flex justify-center items-start min-h-[500px] overflow-auto relative">
+                     {/* Checkerboard pattern for transparency */}
+                     <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#475569 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                     
+                     <div className="relative shadow-2xl shadow-black/50">
+                        {imageLoadError && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-slate-800 text-red-400 z-10 p-4 text-center border border-red-800">
+                                <div>
+                                    <p className="font-bold mb-2">فشل تحميل الصورة</p>
+                                    <p className="text-sm opacity-80">{imageLoadError}</p>
+                                </div>
+                            </div>
+                        )}
+                        <ImageCanvas 
+                            imageUrl={selectedTemplate.imageUrl} 
+                            overlays={editableOverlays}
+                            logoOverlay={selectedTemplate.logoOverlay}
+                            userEdits={userEdits}
+                            canvasWidthProp={selectedTemplate.canvasWidth}
+                            canvasHeightProp={selectedTemplate.canvasHeight}
+                            backgroundColor="#ffffff"
+                            onImageLoadError={() => {
+                                setImageLoadError(`تعذر تحميل صورة الخلفية.`);
+                            }}
+                            onCanvasLeftClick={handleCanvasClick}
+                            selectedOverlayId={selectedOverlayId}
+                            isMovementEnabled={true}
+                            onOverlayDragStart={handleOverlayDragStart}
+                            onOverlayPositionUpdate={handleOverlayPositionUpdate}
+                            onOverlayDragEnd={handleOverlayDragEnd}
+                        />
+                    </div>
+                 </div>
+            </div>
+            <canvas ref={canvasExportRef} style={{ display: 'none' }}></canvas>
+        </div>
+      </div>
     </div>
   );
 };
