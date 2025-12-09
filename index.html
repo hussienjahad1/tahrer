@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>محرر صور المستندات المدرسية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Cairo', 'Amiri Quran', 'sans-serif'],
+            },
+          }
+        }
+      }
+    </script>
+    <style>
+      @font-face {
+        font-family: '19304-alqabas-bold';
+        src: url('./assets/fonts/19304-alqabas-bold.ttf') format('truetype');
+      }
+      @font-face {
+        font-family: 'Asir 2 Normal';
+        src: url('./assets/fonts/Asir-2-Normal.ttf') format('truetype');
+      }
+      @font-face {
+        font-family: 'DG-Modal3at-Bold';
+        src: url('./assets/fonts/DG-Modal3at-Bold.ttf') format('truetype');
+      }
+      @font-face {
+        font-family: 'Mj_Titr Collage';
+        src: url('./assets/fonts/Mj_Titr_Collage.ttf') format('truetype');
+      }
+      @font-face {
+        font-family: 'PTBLDHAD';
+        src: url('./assets/fonts/PTBLDHAD.ttf') format('truetype');
+      }
+      @font-face {
+        font-family: 'Yaser 1';
+        src: url('./assets/fonts/Yaser-1.ttf') format('truetype');
+      }
+      body {
+        font-family: 'Cairo', sans-serif;
+      }
+      /* Custom scrollbar for better aesthetics */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "@react-oauth/google": "https://esm.sh/@react-oauth/google@^0.12.1",
+    "jwt-decode": "https://esm.sh/jwt-decode@^4.0.0",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+    "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+    "firebase/database": "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js",
+    "firebase/": "https://esm.sh/firebase@10.12.2/",
+    "path": "https://aistudiocdn.com/path@^0.12.7",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.2",
+    "vite": "https://aistudiocdn.com/vite@^7.2.7"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-gray-100">
+    <div id="root"></div>
+    <script type="module" src="./index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
